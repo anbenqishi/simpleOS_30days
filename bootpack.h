@@ -67,6 +67,8 @@
 #define MEMMAN_FREES (4090) /* ABOUT 32KB */
 #define MEMMAN_ADDR  (0x003c0000)
 
+#define MAX_SHEETS   (256)
+#define SHEET_USE    1
 struct MOUSE_DEC {
   unsigned char buf[3];
   unsigned char phase;
@@ -112,14 +114,30 @@ struct FREEINFO
   unsigned int size;
 };
 
-struct MEMMAN
+typedef struct MEMMAN
 {
   int frees;
   int maxfrees;
   int lostsize;
   int losts;
   struct FREEINFO free[MEMMAN_FREES];
-};
+}memman_t;
+
+typedef struct SHEET {
+  unsigned char *buf; /* 图层内容 */
+  int bxsize, bysize; /* 图层大小 */
+  int vx0, vy0;       /* 图层坐标 */
+  int col_inv;        /* color && invisible */
+  int height;         /* 图层高度 */
+  int flags;
+}sheet_t;
+
+typedef struct SHTCTL {
+  unsigned char *vram;
+  int xsize, ysize, top;
+  sheet_t *sheets[MAX_SHEETS];
+  sheet_t sheets0[MAX_SHEETS];
+}shtctl_t;
 
 /* io control */
 void io_hlt(void);
@@ -183,5 +201,7 @@ void memman_init(struct MEMMAN *man);
 unsigned int memman_total(struct MEMMAN *man);
 unsigned int memman_alloc(struct MEMMAN *man, unsigned int size);
 int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size);
+unsigned int memman_alloc_4k(struct MEMMAN *man, unsigned int size);
+int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size);
 
 #endif // BOOTPACK_H
