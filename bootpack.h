@@ -204,4 +204,13 @@ int memman_free(struct MEMMAN *man, unsigned int addr, unsigned int size);
 unsigned int memman_alloc_4k(struct MEMMAN *man, unsigned int size);
 int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size);
 
+/* sheet */
+shtctl_t *shtctl_init(memman_t *memman, unsigned char *vram, int xsize, int ysize);
+sheet_t *sheet_alloc(shtctl_t *ctl);
+void sheet_setbuf(sheet_t *sht, unsigned char *buf, int xsize, int ysize, int col_inv);
+void sheet_refresh(shtctl_t *ctl);
+void sheet_updown(shtctl_t *ctl, sheet_t *sht, int height);
+void sheet_slide(shtctl_t *ctl, sheet_t *sht, int vx0, int vy0);
+void sheet_free(shtctl_t *ctl, sheet_t *sht);
+
 #endif // BOOTPACK_H
