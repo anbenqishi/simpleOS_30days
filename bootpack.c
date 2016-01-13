@@ -29,7 +29,7 @@ void HariMain(void)
   io_sti();
   fifo8_init(&keyfifo, 32, keybuf); /* keyboard */
   fifo8_init(&mousefifo, 128, mousebuf); /* mouse */
-  io_out8(PIC0_IMR, 0xf9); /* PIC1とキーボードを許可(11111001) */
+  io_out8(PIC0_IMR, 0xf9); /* PIC1とkeyboardを許可(11111001) */
   io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
 
   init_keyboard ();
@@ -79,8 +79,7 @@ void HariMain(void)
 				boxfill8(buf_back, binfo->scrnx, COL8_008484,  0, 16, 15, 31);
 				putfonts8_asc(buf_back, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
         sheet_refresh(shtctl, sht_back, 0, 16, 16, 32);
-      }
-      else if (fifo8_status(&mousefifo) != 0){
+      } else if (fifo8_status(&mousefifo) != 0){
         i = fifo8_get(&mousefifo);
         io_sti();
         if (mouse_decode(&mdec, i) != 0) {
@@ -103,10 +102,10 @@ void HariMain(void)
             mx = 0;
           if (my < 0)
             my = 0;
-          if (mx > binfo->scrnx - 16)
-            mx = binfo->scrnx - 16;
-          if (my > binfo->scrny - 16)
-            my = binfo->scrny - 16;
+          if (mx > binfo->scrnx - 1)
+            mx = binfo->scrnx - 1;
+          if (my > binfo->scrny - 1)
+            my = binfo->scrny - 1;
 
           sprintf(s, "(%3d, %3d)", mx, my);
           boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 0, 79, 15); /* 隐藏坐标 */
