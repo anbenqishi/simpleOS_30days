@@ -11,6 +11,7 @@ void HariMain(void)
   int mx, my;
   int i;
   unsigned int memtotal;
+	unsigned int count;
 
   char keybuf[KEYBUF_SIZE] = {0};
   char mousebuf[MOUSEBUF_SIZE] = {0};
@@ -18,11 +19,12 @@ void HariMain(void)
   struct MEMMAN *memman;
 
   shtctl_t *shtctl;
-  sheet_t *sht_back, *sht_mouse;
-  unsigned char *buf_back, buf_mouse[256];
+  sheet_t *sht_back, *sht_mouse, *sht_win;
+  unsigned char *buf_back, buf_mouse[256], *buf_win;
 
   binfo = (struct BOOTINFO *) ADR_BOOTINFO;
   memman = (struct MEMMAN *)MEMMAN_ADDR;
+	count = 0;
 
   init_gdtidt ();
   init_pic();
@@ -44,20 +46,31 @@ void HariMain(void)
   shtctl = shtctl_init(memman, binfo->vram, binfo->scrnx, binfo->scrny);
   sht_back = sheet_alloc(shtctl);
   sht_mouse = sheet_alloc(shtctl);
+	sht_win  = sheet_alloc(shtctl);
+	
   buf_back = (unsigned char *) memman_alloc_4k(memman, binfo->scrnx * binfo->scrny);
+	buf_win  = (unsigned char *) memman_alloc_4k(memman, 160 * 52);
+	
   sheet_setbuf(sht_back, buf_back, binfo->scrnx, binfo->scrny, -1);
   sheet_setbuf(sht_mouse, buf_mouse, 16, 16, 99);
+	sheet_setbuf(sht_win, buf_win, 160, 52, -1);
 
   init_screen8(buf_back, binfo->scrnx, binfo->scrny);
   init_mouse_cursor8(buf_mouse, 99);
-  sheet_slide(shtctl, sht_back, 0, 0);
+	make_window8(buf_win, 160, 52, "counter");
+	
+  sheet_slide(sht_back, 0, 0);
 
+	/* make it in the middle. */
   mx = (binfo->scrnx - 16) / 2;
   my = (binfo->scrny - 28 - 16) / 2;
   //init_mouse_cursor8(mcursor, COL8_008484);
-  sheet_slide(shtctl, sht_mouse, mx, my);
-  sheet_updown(shtctl, sht_back, 0);
-  sheet_updown(shtctl, sht_mouse, 1);
+  sheet_slide(sht_mouse, mx, my);
+	sheet_slide(sht_win, 80, 72);
+	
+  sheet_updown(sht_back, 0);
+	sheet_updown(sht_win, 1);
+  sheet_updown(sht_mouse, 2);
 
   //putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
   sprintf(s, "(%3d, %3d)", mx, my);
@@ -65,12 +78,18 @@ void HariMain(void)
 	sprintf(s, "memory %dMB   free : %dKB",
 			    memtotal / (1024 * 1024), memman_total(memman) / 1024);
   putfonts8_asc(buf_back, binfo->scrnx, 0, 32, COL8_FFFFFF, s);
-  sheet_refresh(shtctl, sht_back, 0, 0, binfo->scrnx, 48);
+  sheet_refresh(sht_back, 0, 0, binfo->scrnx, 48);
 
   for (;;) {
+		++count;
+		sprintf(s, "%010d", count);
+		boxfill8(buf_win, 160, COL8_C6C6C6, 40, 28, 119, 43);
+		putfonts8_asc(buf_win, 160, 40, 28, COL8_000000, s);
+		sheet_refresh(sht_win, 40, 28, 120, 44);
+		
     io_cli();
     if (fifo8_status(&keyfifo) + fifo8_status(&mousefifo) == 0){
-      io_stihlt();
+      io_sti();
     } else {
       if (fifo8_status(&keyfifo) != 0) {
         i = fifo8_get(&keyfifo);
@@ -78,7 +97,7 @@ void HariMain(void)
         sprintf(s, "%02X", i);
 				boxfill8(buf_back, binfo->scrnx, COL8_008484,  0, 16, 15, 31);
 				putfonts8_asc(buf_back, binfo->scrnx, 0, 16, COL8_FFFFFF, s);
-        sheet_refresh(shtctl, sht_back, 0, 16, 16, 32);
+        sheet_refresh(sht_back, 0, 16, 16, 32);
       } else if (fifo8_status(&mousefifo) != 0){
         i = fifo8_get(&mousefifo);
         io_sti();
@@ -92,7 +111,7 @@ void HariMain(void)
             s[2] = 'C';
           boxfill8(buf_back, binfo->scrnx, COL8_008484, 32, 16, 32 + 15 * 8 - 1, 31);
           putfonts8_asc(buf_back, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
-          sheet_refresh(shtctl, sht_back, 32, 16, 32 + 15 * 8, 32);
+          sheet_refresh(sht_back, 32, 16, 32 + 15 * 8, 32);
 
           /* 鼠标指针的移动 */
           //boxfill8(binfo->vram, binfo->scrnx, COL8_008484, mx, my, mx + 15, my + 15); /* 隐藏鼠标 */
@@ -110,8 +129,8 @@ void HariMain(void)
           sprintf(s, "(%3d, %3d)", mx, my);
           boxfill8(buf_back, binfo->scrnx, COL8_008484, 0, 0, 79, 15); /* 隐藏坐标 */
           putfonts8_asc(buf_back, binfo->scrnx, 0, 0, COL8_FFFFFF, s); /* 显示坐标 */
-          sheet_refresh(shtctl, sht_back, 0, 0, 80, 16);
-          sheet_slide(shtctl, sht_mouse, mx, my);
+          sheet_refresh(sht_back, 0, 0, 80, 16);
+          sheet_slide(sht_mouse, mx, my);
           //putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16); /* 描画鼠标 */
         }
       }

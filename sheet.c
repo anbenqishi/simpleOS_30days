@@ -15,6 +15,7 @@ shtctl_t *shtctl_init(memman_t *memman, unsigned char *vram, int xsize, int ysiz
   ctl->top   = -1;
   for (i = 0; i < MAX_SHEETS; ++i) {
     ctl->sheets0[i].flags = 0;
+    ctl->sheets0[i].ctl   = ctl;
   }
 
 err:
@@ -93,17 +94,18 @@ void sheet_refreshsub(shtctl_t *ctl, int vx0, int vy0, int vx1, int vy1)
   }
 }
 
-void sheet_refresh(shtctl_t *ctl, sheet_t *sht, int bx0, int by0, int bx1, int by1)
+void sheet_refresh(sheet_t *sht, int bx0, int by0, int bx1, int by1)
 {
   if (sht->height >= 0)
-    sheet_refreshsub(ctl, sht->vx0 + bx0, sht->vy0 + by0, sht->vx0 + bx1, sht->vy0 + by1);
+    sheet_refreshsub(sht->ctl, sht->vx0 + bx0, sht->vy0 + by0, sht->vx0 + bx1, sht->vy0 + by1);
   return;
 }
 
-void sheet_updown(shtctl_t *ctl, sheet_t *sht, int height)
+void sheet_updown(sheet_t *sht, int height)
 {
   int h;
   int old = sht->height;
+  shtctl_t *ctl = sht->ctl;
 
   if (height > ctl->top + 1)
     height = ctl->top + 1;
@@ -150,7 +152,7 @@ void sheet_updown(shtctl_t *ctl, sheet_t *sht, int height)
   return;
 }
 
-void sheet_slide(shtctl_t *ctl, sheet_t *sht, int vx0, int vy0)
+void sheet_slide(sheet_t *sht, int vx0, int vy0)
 {
   int old_vx0 = sht->vx0;
   int old_vy0 = sht->vy0;
@@ -160,15 +162,15 @@ void sheet_slide(shtctl_t *ctl, sheet_t *sht, int vx0, int vy0)
 
   if (sht->height >= 0)
   {
-    sheet_refreshsub(ctl, old_vx0, old_vy0, old_vx0 + sht->bxsize, old_vy0 + sht->bysize);
-    sheet_refreshsub(ctl, vx0, vy0, vx0 + sht->bxsize, vy0 + sht->bysize);
+    sheet_refreshsub(sht->ctl, old_vx0, old_vy0, old_vx0 + sht->bxsize, old_vy0 + sht->bysize);
+    sheet_refreshsub(sht->ctl, vx0, vy0, vx0 + sht->bxsize, vy0 + sht->bysize);
   }
 }
 
-void sheet_free(shtctl_t *ctl, sheet_t *sht)
+void sheet_free(sheet_t *sht)
 {
   if (sht->height >= 0)
-    sheet_updown(ctl, sht, -1); //如果处于显示状态, 则先设定为隐藏
+    sheet_updown(sht, -1); //如果处于显示状态, 则先设定为隐藏
 
   sht->flags = 0;
   return;

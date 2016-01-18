@@ -130,6 +130,7 @@ typedef struct SHEET {
   int col_inv;        /* color && invisible */
   int height;         /* 图层高度 */
   int flags;
+  struct SHTCTL *ctl;
 }sheet_t;
 
 typedef struct SHTCTL {
@@ -159,7 +160,8 @@ void putfont8(char *vram, int xsize, int x, int y, char c, char *font);
 void putfonts8_asc(char *vram, int xsize, int x, int y, char c, unsigned char *s);
 void init_mouse_cursor8(char *mouse, char bc);
 void putblock8_8(char *vram, int vxsize, int pxsize,
-  int pysize, int px0, int py0, char *buf, int bxsize);
+                 int pysize, int px0, int py0, char *buf, int bxsize);
+void make_window8(unsigned char *buf, int xsize, int ysize, char *title);
 
 /* gdt/idt */
 void init_gdtidt(void);
@@ -208,9 +210,9 @@ int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size);
 shtctl_t *shtctl_init(memman_t *memman, unsigned char *vram, int xsize, int ysize);
 sheet_t *sheet_alloc(shtctl_t *ctl);
 void sheet_setbuf(sheet_t *sht, unsigned char *buf, int xsize, int ysize, int col_inv);
-void sheet_refresh(shtctl_t *ctl, sheet_t *sht, int bx0, int by0, int bx1, int by1);
-void sheet_updown(shtctl_t *ctl, sheet_t *sht, int height);
-void sheet_slide(shtctl_t *ctl, sheet_t *sht, int vx0, int vy0);
-void sheet_free(shtctl_t *ctl, sheet_t *sht);
+void sheet_refresh(sheet_t *sht, int bx0, int by0, int bx1, int by1);
+void sheet_updown(sheet_t *sht, int height);
+void sheet_slide(sheet_t *sht, int vx0, int vy0);
+void sheet_free(sheet_t *sht);
 
 #endif // BOOTPACK_H
