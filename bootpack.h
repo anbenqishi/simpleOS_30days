@@ -135,6 +135,7 @@ typedef struct SHEET {
 
 typedef struct SHTCTL {
   unsigned char *vram;
+	unsigned char *map; /* 记录当前画面上点的图层 */
   int xsize, ysize, top;
   sheet_t *sheets[MAX_SHEETS];
   sheet_t sheets0[MAX_SHEETS];
