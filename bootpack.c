@@ -4,6 +4,8 @@
 extern fifo8 keyfifo;
 extern fifo8 mousefifo;
 
+extern timer_t timerctl;
+
 void HariMain(void)
 {
   char s[40];
@@ -12,9 +14,11 @@ void HariMain(void)
   int i;
   unsigned int memtotal;
 	unsigned int count;
+	fifo8 timerfifo;
 
   char keybuf[KEYBUF_SIZE] = {0};
   char mousebuf[MOUSEBUF_SIZE] = {0};
+	char timerbuf[8] = {0};
   struct BOOTINFO *binfo;
   struct MEMMAN *memman;
 
@@ -29,10 +33,16 @@ void HariMain(void)
   init_gdtidt ();
   init_pic();
   io_sti();
-  fifo8_init(&keyfifo, 32, keybuf); /* keyboard */
-  fifo8_init(&mousefifo, 128, mousebuf); /* mouse */
-  io_out8(PIC0_IMR, 0xf9); /* PIC1とkeyboardを許可(11111001) */
-  io_out8(PIC1_IMR, 0xef); /* マウスを許可(11101111) */
+  fifo8_init(&keyfifo, KEYBUF_SIZE, keybuf); /* keyboard */
+  fifo8_init(&mousefifo, MOUSEBUF_SIZE, mousebuf); /* mouse */
+	
+	init_pit();
+
+	fifo8_init(&timerfifo, 8, timerbuf);       /* timer */
+	settimer(100, &timerfifo, 1);
+	
+  io_out8(PIC0_IMR, 0xf8); /* PIC1/keyboard/PIT设置为许可(11111000) */
+  io_out8(PIC1_IMR, 0xef); /* 鼠标设置为许可(11101111) */
 
   init_keyboard ();
   enable_mouse(&mdec);
@@ -82,13 +92,13 @@ void HariMain(void)
 
   for (;;) {
 		++count;
-		sprintf(s, "%010d", count);
+		sprintf(s, "%u, %u", timerctl.count, timerctl.timeout);
 		boxfill8(buf_win, 160, COL8_C6C6C6, 40, 28, 119, 43);
 		putfonts8_asc(buf_win, 160, 40, 28, COL8_000000, s);
 		sheet_refresh(sht_win, 40, 28, 120, 44);
 		
     io_cli();
-    if (fifo8_status(&keyfifo) + fifo8_status(&mousefifo) == 0){
+    if (fifo8_status(&keyfifo) + fifo8_status(&mousefifo) + fifo8_status(&timerfifo) == 0){
       io_sti();
     } else {
       if (fifo8_status(&keyfifo) != 0) {
@@ -133,7 +143,12 @@ void HariMain(void)
           sheet_slide(sht_mouse, mx, my);
           //putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16); /* 描画鼠标 */
         }
-      }
+      } else if (fifo8_status(&timerfifo) != 0) {
+				i = fifo8_get(&timerfifo);
+				io_sti();
+				putfonts8_asc(buf_back, binfo->scrnx, 0, 64, COL8_FFFFFF, "10[sec]");
+				sheet_refresh(sht_back, 0, 64, 56, 80);
+			}
     }
   }
 }

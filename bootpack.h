@@ -69,6 +69,11 @@
 
 #define MAX_SHEETS   (256)
 #define SHEET_USE    1
+
+/* timer. */
+#define PIT_CTRL     (0x0043)
+#define PIT_CNT0     (0x0040)
+
 struct MOUSE_DEC {
   unsigned char buf[3];
   unsigned char phase;
@@ -141,6 +146,14 @@ typedef struct SHTCTL {
   sheet_t sheets0[MAX_SHEETS];
 }shtctl_t;
 
+/* timer */
+typedef struct TIMERCTL {
+	unsigned int count;
+	unsigned int timeout;
+	fifo8 *fifo;
+	unsigned char data;
+}timer_t;
+
 /* io control */
 void io_hlt(void);
 void io_cli(void);
@@ -170,12 +183,14 @@ void set_segmdesc(struct SEGMENT_DESCRIPTOR *sd, unsigned int limit, int base, i
 void set_gatedesc(struct GATE_DESCRIPTOR *gd, int offset, int selector, int ar);
 void load_gdtr(int limit, int addr);
 void load_idtr(int limit, int addr);
+void asm_inthandler20(void);
 void asm_inthandler21(void);
 void asm_inthandler27(void);
 void asm_inthandler2c(void);
 
 /* interrupt */
 void init_pic(void);
+void inthandler20(int *esp);
 void inthandler21(int *esp);
 void inthandler27(int *esp);
 void inthandler2c(int *esp);
@@ -215,5 +230,9 @@ void sheet_refresh(sheet_t *sht, int bx0, int by0, int bx1, int by1);
 void sheet_updown(sheet_t *sht, int height);
 void sheet_slide(sheet_t *sht, int vx0, int vy0);
 void sheet_free(sheet_t *sht);
+
+/* timer */
+void init_pit(void);
+void settimer(unsigned int timeout, fifo8 *fifo, unsigned char data);
 
 #endif // BOOTPACK_H
